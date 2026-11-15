@@ -1,17 +1,28 @@
-# prayerreminder_app
+# Islamic Prayer & Hadith Companion ﷺ (Prototype)
 
-A new Flutter project.
+A mobile application prototype built with **Flutter** and **SQLite** as a final course project. This app helps users stay connected to their daily prayers, read authentic sayings (Hadith) of Prophet Muhammad ﷺ, bookmark favorite narrations, and track their daily prayer habits offline.
 
-## Getting Started
+## 📌 Project Status: Working Prototype
+This repository contains the functional MVP (Minimum Viable Product) prototype demonstrating multi-screen navigation, astronomical prayer time calculation, and local relational database persistence (CRUD operations).
 
-This project is a starting point for a Flutter application.
+## ✨ Key Features & Screens
+1. **Prayer Times & Daily Hadith Screen:** Calculates accurate daily prayer times (Fajr, Sunrise, Dhuhr, Asr, Maghrib, Isha) using the Egyptian General Authority of Survey calculation method, paired with a highlighted *Hadith of the Day*.
+2. **Hadith Library Screen:** Displays a curated collection of authentic Hadiths (Arabic text and English translation) fetched directly from a local SQLite database, with one-tap bookmarking.
+3. **Saved Favorites Screen:** Filters and displays user-bookmarked Hadiths stored persistently on the device, allowing quick removal and management.
+4. **Daily Prayer Tracker Screen:** An interactive checklist that logs completed daily prayers into the local database to help users build consistent habits.
 
-A few resources to get you started if this is your first Flutter project:
+## 🛠️ Tech Stack
+* **Framework:** Flutter (Dart)[cite: 1]
+* **Database:** SQLite (`sqflite` & `path`) for offline local storage[cite: 1]
+* **Prayer Calculation:** `adhan` Dart library
+* **Date/Time Formatting:** `intl`
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+## 🗄️ Database Schema
+The prototype initializes a local `islamic_app.db` SQLite database with two primary tables:
+* `hadiths`: `id (INTEGER PK)`, `arabic (TEXT)`, `translation (TEXT)`, `isFavorite (INTEGER)`
+* `prayer_logs`: `prayerName (TEXT PK)`, `isCompleted (INTEGER)`
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 🚀 How to Run Locally
+1. Clone this repository:
+   ```bash
+   git clone [https://github.com/YOUR-USERNAME/YOUR-REPO-NAME.git](https://github.com/YOUR-USERNAME/YOUR-REPO-NAME.git)
