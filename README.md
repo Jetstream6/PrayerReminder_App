@@ -25,4 +25,4 @@ The prototype initializes a local `islamic_app.db` SQLite database with two prim
 ## 🚀 How to Run Locally
 1. Clone this repository:
    ```bash
-   git clone [https://github.com/YOUR-USERNAME/YOUR-REPO-NAME.git](https://github.com/YOUR-USERNAME/YOUR-REPO-NAME.git)
+   git clone https://github.com/Jetstream6/PrayerReminder_App.git
