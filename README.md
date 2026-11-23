@@ -1,28 +1,168 @@
-# Islamic Prayer & Hadith Companion ﷺ (Prototype)
+# Islamic Prayer & Hadith Companion ﷺ
 
-A mobile application prototype built with **Flutter** and **SQLite** as a final course project. This app helps users stay connected to their daily prayers, read authentic sayings (Hadith) of Prophet Muhammad ﷺ, bookmark favorite narrations, and track their daily prayer habits offline.
+A mobile application built with **Flutter** and **SQLite** as a course project for the Mobile Application Development subject. The app works **100% offline**: it calculates daily prayer times with astronomical formulas, shows a different Hadith every day, lets the user save favorite Hadiths, and tracks which prayers were completed each day.
 
-## 📌 Project Status: Working Prototype
-This repository contains the functional MVP (Minimum Viable Product) prototype demonstrating multi-screen navigation, astronomical prayer time calculation, and local relational database persistence (CRUD operations).
+---
 
-## ✨ Key Features & Screens
-1. **Prayer Times & Daily Hadith Screen:** Calculates accurate daily prayer times (Fajr, Sunrise, Dhuhr, Asr, Maghrib, Isha) using the Egyptian General Authority of Survey calculation method, paired with a highlighted *Hadith of the Day*.
-2. **Hadith Library Screen:** Displays a curated collection of authentic Hadiths (Arabic text and English translation) fetched directly from a local SQLite database, with one-tap bookmarking.
-3. **Saved Favorites Screen:** Filters and displays user-bookmarked Hadiths stored persistently on the device, allowing quick removal and management.
-4. **Daily Prayer Tracker Screen:** An interactive checklist that logs completed daily prayers into the local database to help users build consistent habits.
+## Features
 
-## 🛠️ Tech Stack
-* **Framework:** Flutter (Dart)[cite: 1]
-* **Database:** SQLite (`sqflite` & `path`) for offline local storage[cite: 1]
-* **Prayer Calculation:** `adhan` Dart library
-* **Date/Time Formatting:** `intl`
+| Screen      | What it does                                                                                                                                                                             |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Prayers** | Calculates today's Fajr, Sunrise, Dhuhr, Asr, Maghrib and Isha for the selected Egyptian city. Highlights the next prayer and shows the time remaining. Shows the **Hadith of the Day**. |
+| **Hadiths** | Full Hadith library (Arabic text + English translation) loaded from SQLite. Search, copy to clipboard, and one-tap bookmarking.                                                          |
+| **Saved**   | Shows only the bookmarked Hadiths. Includes an empty state and quick removal.                                                                                                            |
+| **Tracker** | Daily checklist for the five prayers with a progress bar. A fresh checklist is created automatically every day, and previous days are kept in the database.                              |
 
-## 🗄️ Database Schema
-The prototype initializes a local `islamic_app.db` SQLite database with two primary tables:
-* `hadiths`: `id (INTEGER PK)`, `arabic (TEXT)`, `translation (TEXT)`, `isFavorite (INTEGER)`
-* `prayer_logs`: `prayerName (TEXT PK)`, `isCompleted (INTEGER)`
+Other details:
 
-## 🚀 How to Run Locally
-1. Clone this repository:
-   ```bash
-   git clone https://github.com/Jetstream6/PrayerReminder_App.git
+- **City selection** (Cairo, Giza, Alexandria, Port Said, Luxor, Aswan). The choice is saved and restored on the next launch.
+- **Hadith of the Day** changes daily (day of the year modulo the number of Hadiths).
+- Arabic text is displayed right-to-left and right-aligned.
+- Loading indicators and short confirmation messages (SnackBar) for user actions.
+
+---
+
+## Tech Stack
+
+| Layer           | Technology                                                                                           |
+| --------------- | ---------------------------------------------------------------------------------------------------- |
+| Framework       | Flutter (Dart), Material 3                                                                           |
+| Local database  | SQLite via [`sqflite`](https://pub.dev/packages/sqflite) and [`path`](https://pub.dev/packages/path) |
+| Prayer times    | [`adhan`](https://pub.dev/packages/adhan) (offline astronomical calculation)                         |
+| Date formatting | [`intl`](https://pub.dev/packages/intl)                                                              |
+
+---
+
+## Project Structure
+
+The application code lives in a single file so it is easy to follow and present:
+
+```
+PrayerReminder_App/
+├── lib/
+│   └── main.dart          # All application code (see sections below)
+├── test/
+│   └── widget_test.dart   # Widget test
+├── pubspec.yaml           # Dependencies
+└── android/ ios/ web/ ... # Platform folders generated by Flutter
+```
+
+Sections inside `lib/main.dart`:
+
+1. **Entry & theme:** `main()`, `PrayerApp` (Material 3, teal color scheme).
+2. **Helpers:** `egyptCities` (city coordinates) and `ArabicText` (reusable RTL text widget).
+3. **Database layer:** `DatabaseHelper` (Singleton) with creation, upgrade, seeding and all queries.
+4. **Navigation shell:** `MainNavigation` with a bottom `NavigationBar` that switches between the four screens.
+5. **Screens:** `PrayerTimesScreen`, `HadithLibraryScreen`, `FavoritesScreen`, `PrayerTrackerScreen`.
+
+---
+
+## Database Schema
+
+Database file: `islamic_app.db` (current version: **2**). SQLite has no boolean type, so `0` means false and `1` means true.
+
+**`hadiths`**
+
+| Column        | Type    | Notes                           |
+| ------------- | ------- | ------------------------------- |
+| `id`          | INTEGER | Primary key, auto-increment     |
+| `arabic`      | TEXT    | Arabic text                     |
+| `translation` | TEXT    | English meaning and source book |
+| `isFavorite`  | INTEGER | Default `0`                     |
+
+**`prayer_logs`** (one row per prayer per day)
+
+| Column        | Type    | Notes                           |
+| ------------- | ------- | ------------------------------- |
+| `prayerName`  | TEXT    | Fajr, Dhuhr, Asr, Maghrib, Isha |
+| `date`        | TEXT    | Format `yyyy-MM-dd`             |
+| `isCompleted` | INTEGER | Default `0`                     |
+
+Primary key: `(prayerName, date)`.
+
+**`settings`** (key/value storage)
+
+| Column         | Type | Notes                            |
+| -------------- | ---- | -------------------------------- |
+| `settingKey`   | TEXT | Primary key (for example `city`) |
+| `settingValue` | TEXT | Stored value                     |
+
+On first launch (`onCreate`) the tables are created and the Hadiths are seeded. When upgrading from version 1 (`onUpgrade`), `prayer_logs` is recreated with the new `date` column, the `settings` table is added, and the new Hadiths are inserted.
+
+---
+
+## How Prayer Times Are Calculated
+
+- **Location:** latitude/longitude of the selected city.
+- **Method:** Egyptian General Authority of Survey (`CalculationMethod.egyptian`), which uses a Fajr angle of 19.5° and an Isha angle of 17.5°.
+- **Madhab:** Shafi'i (affects the Asr time).
+- **Output:** times are returned in the device's local time zone and formatted as a 12-hour clock.
+
+No internet connection or external API is used.
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- [Flutter SDK](https://docs.flutter.dev/get-started/install) (see the SDK constraint in `pubspec.yaml`)
+- An Android emulator or a physical device
+
+### Run
+
+```bash
+git clone https://github.com/Jetstream6/PrayerReminder_App.git
+cd PrayerReminder_App
+flutter pub get
+flutter run
+```
+
+### Build an APK
+
+```bash
+flutter build apk --release
+```
+
+The APK is created at `build/app/outputs/flutter-apk/app-release.apk`.
+
+### Run the tests
+
+```bash
+flutter test
+```
+
+> If you installed an older version of the app before the database upgrade and see database errors, uninstall the app from the device and run it again.
+
+---
+
+## Known Limitations
+
+- Prayer notifications (Adhan alerts) are not implemented yet.
+- The city is chosen from a fixed list of Egyptian cities; GPS location is not used.
+- The Hadith collection is small and stored inside the app code.
+- The interface is in English, with Arabic used for Hadith text only.
+
+## Future Improvements
+
+- Local notifications at prayer times.
+- Automatic location with GPS.
+- A larger Hadith database with categories.
+- Arabic interface and dark mode.
+- Qibla direction.
+
+---
+
+## Disclaimer
+
+Prayer times are calculated and may differ slightly from your local mosque's timetable. Please verify Hadith texts against trusted sources (for example [dorar.net](https://dorar.net)) before sharing them.
+
+## Team
+
+- `<Abdullah Ashraf>`
+- `<Abdelrahman Fathy>`
+- `<Zeyad Wael>`
+- `<Salem Mahgoub>`
+
+Course: Mobile Application Development
+professor: Ayman Mahgoub
